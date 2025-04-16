@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat From the Heart 💌</title>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #f7e9ff, #ffeaf7);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .floating-hearts {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff6b9d"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>') no-repeat center center;
+      background-size: contain;
+      animation: float 10s linear infinite;
+      opacity: 0.7;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) scale(1);
+        opacity: 0.7;
+      }
+      100% {
+        transform: translateY(-100px) scale(0.3);
+        opacity: 0;
+      }
+    }
+
+    .chat-container {
+      width: 90%;
+      max-width: 500px;
+      background: white;
+      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.2);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 80vh;
+      max-height: 600px;
+      position: relative;
+      border: 1px solid rgba(124, 58, 237, 0.2);
+    }
+
+    .chat-header {
+      background: linear-gradient(to right, #7c3aed, #c084fc);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f0e4ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .header-info h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .header-info p {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .messages {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23ffffff" /><path d="M20,20 L80,80 M80,20 L20,80" stroke="%23f9f9f9" stroke-width="1" /></svg>');
+    }
+
+    .message {
+      padding: 12px 18px;
+      margin: 5px 0;
+      border-radius: 20px;
+      max-width: 80%;
+      position: relative;
+      font-size: 15px;
+      line-height: 1.4;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .message.you {
+      align-self: flex-end;
+      background: linear-gradient(to bottom right, #d2dfff, #c4d3ff);
+      border-bottom-left-radius: 5px;
+    }
+
+    .message.me {
+      align-self: flex-start;
+      background: linear-gradient(to bottom right, #e6dcff, #d1c4ff);
+      border-bottom-right-radius: 5px;
+      color: #4a2b8c;
+    }
+
+    .message.special {
+      background: linear-gradient(to bottom right, #ffe6f9, #ffd4f4);
+      color: #a13687;
+    }
+
+    .message-time {
+      font-size: 10px;
+      opacity: 0.6;
+      margin-top: 5px;
+      text-align: right;
+    }
+
+    .gif-container {
+      max-width: 200px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 5px 0;
+    }
+
+    .gif-container img {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .typing-indicator {
+      display: flex;
+      padding: 12px 18px;
+      background: #f1f1f1;
+      border-radius: 20px;
+      align-self: flex-start;
+      margin: 5px 0;
+      width: 60px;
+    }
+
+    .typing-indicator span {
+      height: 8px;
+      width: 8px;
+      margin: 0 2px;
+      background-color: #9e9ea1;
+      border-radius: 50%;
+      display: inline-block;
+      animation: typing 1.5s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+      0% {
+        transform: translateY(0px);
+        background-color: #9e9ea1;
+      }
+      25% {
+        transform: translateY(-5px);
+        background-color: #7c3aed;
+      }
+      50% {
+        transform: translateY(0px);
+        background-color: #9e9ea1;
+      }
+    }
+
+    .controls {
+      padding: 15px;
+      border-top: 1px solid #eee;
+      background: #fafafa;
+      text-align: center;
+      position: relative;
+    }
+
+    .next-btn {
+      background: linear-gradient(to right, #7c3aed, #a855f7);
+      color: white;
+      padding: 12px 25px;
+      border: none;
+      font-size: 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .next-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 15px rgba(124, 58, 237, 0.4);
+    }
+
+    .next-btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-ripple {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to {
+        transform: scale(3);
+        opacity: 0;
+      }
+    }
+
+    .message-animation-in {
+      animation: messageIn 0.5s ease forwards;
+    }
+
+    @keyframes messageIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .emoji {
+      font-size: 1.5em;
+      margin: 0 5px;
+      display: inline-block;
+      animation: emoji-bounce 1s infinite alternate;
+    }
+
+    @keyframes emoji-bounce {
+      0% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(-5px);
+      }
+    }
+
+    /* Custom scrollbar */
+    .messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: #c084fc;
+      border-radius: 10px;
+    }
+
+    .messages::-webkit-scrollbar-thumb:hover {
+      background: #7c3aed;
+    }
+
+    /* Input form styles */
+    .input-container {
+      display: flex;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      padding: 10px;
+      align-items: center;
+      gap: 10px;
+      display: none;
+    }
+
+    .message-input {
+      flex: 1;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 10px 15px;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.3s ease;
+    }
+
+    .message-input:focus {
+      border-color: #a855f7;
+    }
+
+    .send-btn {
+      background: linear-gradient(to right, #7c3aed, #a855f7);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(124, 58, 237, 0.3);
+    }
+
+    .send-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(124, 58, 237, 0.4);
+    }
+
+    .send-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* Loading and notifications */
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      border-left: 4px solid #4caf50;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      padding: 15px 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.error {
+      border-left-color: #f44336;
+    }
+
+    .notification-icon {
+      margin-right: 10px;
+      font-size: 20px;
+    }
+
+    .notification-text {
+      flex: 1;
+    }
+
+    .user-form {
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      margin: 20px 0;
+      display: none;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .submit-btn {
+      background: #7c3aed;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="floating-hearts" id="floating-hearts"></div>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="avatar">💌</div>
+    <div class="header-info">
+      <h2>Vanny</h2>
+      <p>Online now</p>
+    </div>
+  </div>
+  <div class="messages" id="messages">
+    <!-- Messages will appear here -->
+  </div>
+  <div class="controls" id="controls">
+    <button class="next-btn" id="nextBtn">Next 💬</button>
+  </div>
+  <div class="input-container" id="inputContainer">
+    <input type="text" class="message-input" id="messageInput" placeholder="Type your response..." autocomplete="off">
+    <button class="send-btn" id="sendBtn">➤</button>
+  </div>
+</div>
+
+<div class="notification" id="notification">
+  <div class="notification-icon">✓</div>
+  <div class="notification-text">Message sent successfully!</div>
+</div>
+
+<div class="user-form" id="userForm">
+  <div class="form-group">
+    <label for="name">Your Name</label>
+    <input type="text" id="name" placeholder="Enter your name">
+  </div>
+  <div class="form-group">
+    <label for="email">Your Email</label>
+    <input type="email" id="email" placeholder="Enter your email">
+  </div>
+  <button class="submit-btn" id="submitBtn">Continue</button>
+</div>
+
+<script>
+  // Replace with your EmailJS service ID, template ID, and user ID
+  
+  const emailjsConfig = {
+    serviceId: 'service_ponksln',
+    templateId: 'template_xwsnmrd',
+    userId: '62-5ufukdgYo-WQSo'
+  };
+
+  // Initialize EmailJS
+  (function() {
+    emailjs.init(emailjsConfig.userId);
+  })();
+
+  const messages = [
+    { text: "Hey... 👋", type: "me" },
+    { text: "I know this is kind of random...", type: "me" },
+    { text: "But I made this just for you.", type: "me" },
+    { text: "Because there's something I've been meaning to tell you...", type: "me" },
+    { 
+      text: "You're honestly amazing.",
+      type: "me",
+      gif: "https://media.tenor.com/og9MfvR0R6EAAAAi/cute-teddy-bears-teddy-bears.gif"
+    },
+    { text: "Every time we talk, I can't help but smile 😊", type: "me" },
+    { 
+      text: "Okay... deep breath...",
+      type: "me",
+      gif: "https://media1.tenor.com/m/vMW3I0HGSfYAAAAC/bibipet-bibi.gif"
+    },
+    { 
+      text: "I like you. Like *really* like you. 💖",
+      type: "me",
+      special: true,
+      gif: "https://media1.tenor.com/m/pYcNXV2FL8wAAAAC/bearish-bearish-af.gif"
+    },
+    { text: "I just wanted you to know.", type: "me" }
+  ];
+
+  let index = 0;
+  let userInfo = {
+    name: 'Olivia',
+    email: ''
+  };
+  
+  const messagesContainer = document.getElementById('messages');
+  const nextBtn = document.getElementById('nextBtn');
+  const controlsContainer = document.getElementById('controls');
+  const inputContainer = document.getElementById('inputContainer');
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const notification = document.getElementById('notification');
+  
+  // Create floating hearts in background
+  function createFloatingHearts() {
+    const heartsContainer = document.getElementById('floating-hearts');
+    for (let i = 0; i < 15; i++) {
+      const heart = document.createElement('div');
+      heart.classList.add('heart');
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.animationDuration = (Math.random() * 10 + 5) + 's';
+      heart.style.animationDelay = (Math.random() * 5) + 's';
+      heartsContainer.appendChild(heart);
+    }
+  }
+  
+  // Add ripple effect to button
+  function createRipple(event) {
+    try {
+      const button = event.currentTarget;
+      const ripple = document.createElement('span');
+      ripple.classList.add('btn-ripple');
+      
+      const rect = button.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      
+      button.appendChild(ripple);
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 600);
+    } catch (error) {
+      console.error("Ripple error:", error);
+    }
+  }
+
+  // Show typing indicator
+  function showTypingIndicator() {
+    const typing = document.createElement('div');
+    typing.classList.add('typing-indicator');
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    messagesContainer.appendChild(typing);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    return typing;
+  }
+
+  // Get current time for message timestamp
+  function getCurrentTime() {
+    const now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    
+    return hours + ':' + minutes + ' ' + ampm;
+  }
+
+  // Show notification
+  function showNotification(message, isError = false) {
+    const notificationElement = document.getElementById('notification');
+    const notificationText = notificationElement.querySelector('.notification-text');
+    
+    notificationElement.classList.toggle('error', isError);
+    notificationText.textContent = message;
+    notificationElement.classList.add('show');
+    
+    setTimeout(() => {
+      notificationElement.classList.remove('show');
+    }, 3000);
+  }
+
+  // Send email using EmailJS
+  function sendEmail(message) {
+    const templateParams = {
+      from_name: userInfo.name || 'Anonymous',
+      from_email: userInfo.email || 'No email provided',
+      message: message,
+      to_name: 'You',
+      reply_to: userInfo.email || '',
+      date: new Date().toLocaleDateString()
+    };
+    
+    return emailjs.send(
+      emailjsConfig.serviceId,
+      emailjsConfig.templateId,
+      templateParams
+    );
+  }
+
+  function nextMessage() {
+    if (index < messages.length) {
+      const message = messages[index];
+      const typing = showTypingIndicator();
+      
+      // Simulate typing delay
+      setTimeout(() => {
+        typing.remove();
+        
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', message.type, 'message-animation-in');
+        if (message.special) msgDiv.classList.add('special');
+        
+        let content = message.text;
+        msgDiv.innerHTML = content;
+        
+        if (message.gif) {
+          const gifContainer = document.createElement('div');
+          gifContainer.classList.add('gif-container');
+          const gifImg = document.createElement('img');
+          gifImg.src = message.gif;
+          gifImg.alt = "Animated GIF";
+          gifContainer.appendChild(gifImg);
+          msgDiv.appendChild(gifContainer);
+        }
+        
+        const timeSpan = document.createElement('div');
+        timeSpan.classList.add('message-time');
+        timeSpan.textContent = getCurrentTime();
+        msgDiv.appendChild(timeSpan);
+        
+        messagesContainer.appendChild(msgDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Special animations for specific messages
+        if (index === 4) { // "You're amazing" message
+          createFloatingHearts();
+        }
+        
+        // Note: Removed confetti animation for the "I really like you" message
+        
+        index++;
+        if (index === messages.length) {
+          nextBtn.innerText = "Send 💌";
+          nextBtn.style.background = "linear-gradient(to right, #e11d48, #f43f5e)";
+        }
+      }, Math.random() * 500 + 500);
+      
+    } else if (index === messages.length) {
+      // Switch to input mode
+      controlsContainer.style.display = "none";
+      inputContainer.style.display = "flex";
+      
+      // Show response prompt
+      setTimeout(() => {
+        const typing = showTypingIndicator();
+        
+        setTimeout(() => {
+          typing.remove();
+          
+          const responsePrompt = document.createElement('div');
+          responsePrompt.classList.add('message', 'me', 'message-animation-in');
+          responsePrompt.innerHTML = "How do you feel about that? 💬";
+          
+          const timeSpan = document.createElement('div');
+          timeSpan.classList.add('message-time');
+          timeSpan.textContent = getCurrentTime();
+          responsePrompt.appendChild(timeSpan);
+          
+          messagesContainer.appendChild(responsePrompt);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          
+          // Focus on input
+          messageInput.focus();
+        }, 1000);
+      }, 500);
+      
+      index++;
+    }
+  }
+  
+  function handleUserResponse() {
+    const message = messageInput.value.trim();
+    if (!message) return;
+    
+    // Clear input
+    messageInput.value = '';
+    
+    // Add user's message to chat
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', 'you', 'message-animation-in');
+    msgDiv.innerText = message;
+    
+    const timeSpan = document.createElement('div');
+    timeSpan.classList.add('message-time');
+    timeSpan.textContent = getCurrentTime();
+    msgDiv.appendChild(timeSpan);
+    
+    messagesContainer.appendChild(msgDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Send email notification
+    sendEmail(message)
+      .then(() => {
+        showNotification('Message sent successfully!');
+        
+        // Show thank you message after a short delay
+        setTimeout(() => {
+          const thankYouMsg = document.createElement('div');
+          thankYouMsg.classList.add('message', 'me', 'message-animation-in');
+          thankYouMsg.innerHTML = "Thank you for your response! 💕";
+          
+          const timeSpan = document.createElement('div');
+          timeSpan.classList.add('message-time');
+          timeSpan.textContent = getCurrentTime();
+          thankYouMsg.appendChild(timeSpan);
+          
+          messagesContainer.appendChild(thankYouMsg);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          
+          // Show reset button
+          setTimeout(() => {
+            inputContainer.style.display = "none";
+            controlsContainer.style.display = "block";
+            nextBtn.innerText = "Start Over 💬";
+            nextBtn.style.background = "linear-gradient(to right, #7c3aed, #a855f7)";
+            nextBtn.onclick = resetChat;
+          }, 1500);
+        }, 1000);
+      })
+      .catch(error => {
+        console.error('Email sending failed:', error);
+        showNotification('Failed to send message. Please try again.', true);
+      });
+  }
+  
+  function resetChat() {
+    messagesContainer.innerHTML = '';
+    index = 0;
+    nextBtn.innerText = "Next 💬";
+    nextBtn.onclick = nextMessage;
+    controlsContainer.style.display = "block";
+    inputContainer.style.display = "none";
+    nextMessage();
+  }
+
+  // Initialize event listeners
+  function initializeEventListeners() {
+    // Next button click
+    nextBtn.addEventListener('click', function(event) {
+      try {
+        createRipple(event);
+      } catch (error) {
+        console.error("Ripple effect error:", error);
+      }
+      nextMessage();
+    });
+    
+    // Send button click
+    sendBtn.addEventListener('click', handleUserResponse);
+    
+    // Enter key in input field
+    messageInput.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        handleUserResponse();
+      }
+    });
+  }
+
+  // Auto show first message and set up event listeners on load
+  window.onload = function() {
+    createFloatingHearts();
+    initializeEventListeners();
+    nextMessage();
+  };
+</script>
+
+</body>
+</html>
