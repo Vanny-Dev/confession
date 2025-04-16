@@ -474,13 +474,18 @@
   })();
 
   const messages = [
-    { text: "Hey... 👋", type: "me" },
-    { text: "I know this is kind of random...", type: "me" },
-    { text: "But I made this just for you.", type: "me" },
-    { text: "Because there's something I've been meaning to tell you...", type: "me" },
+    { text: "Hey... 👋", 
+      type: "me" },
+    { text: "I know this is kind of random...", 
+      type: "me" },
+    { text: "But I made this just for you.", 
+      type: "me" },
+    { text: "Because there's something I've been meaning to tell you...", 
+      type: "me" },
     { 
       text: "But before I tell you, I want to give you something",
-      type: "me"
+      type: "me",
+      gif: "https://media.tenor.com/BTKKiIKx2aIAAAAi/wait-panda.gif"
     },
     { 
       text: "Flowers for you",
@@ -492,7 +497,10 @@
       type: "me",
       gif: "https://media.tenor.com/og9MfvR0R6EAAAAi/cute-teddy-bears-teddy-bears.gif"
     },
-    { text: "Every time we talk, I can't help but smile 😊", type: "me" },
+    { text: "Every time we talk, I can't help but smile 😊", 
+      type: "me",
+      gif: "https://media.tenor.com/CVkvJ20JpsQAAAAi/mimibubu.gif"
+    },
     { 
       text: "Okay... deep breath...",
       type: "me",
@@ -658,7 +666,7 @@
         
         index++;
         if (index === messages.length) {
-          nextBtn.innerText = "Send 💌";
+          nextBtn.innerText = "Reply 💌";
           nextBtn.style.background = "linear-gradient(to right, #e11d48, #f43f5e)";
         }
       }, Math.random() * 500 + 500);
